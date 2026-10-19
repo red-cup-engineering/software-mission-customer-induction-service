@@ -6,8 +6,7 @@
   "description": "Deterministic actuator that validates proposal delta evidence and forms a JS-Mark induction manifest.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/red-cup-engineering/computer-code-engineering-services-section.git",
-    "directory": "services/javascript-engineering-services-section/services/software-mission-customer-induction-service"
+    "url": "git+https://github.com/red-cup-engineering/software-mission-customer-induction-service.git"
   },
   "exports": "./src/customer-induction.mjs",
   "scripts": {
