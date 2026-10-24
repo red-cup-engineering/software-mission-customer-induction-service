@@ -1,0 +1,33 @@
+name: Original customer software-induction source qualification
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: customer-induction-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  original-native-source:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      # No npm install: the historical workspace identity package is not a
+      # published self-contained CI dependency. Native tests execute the
+      # EXACT original source body with that ONE foreign port isolated.
+      # A passing job is source-byte/path qualification, not installed
+      # customer authority, historical identity conformance or income.
+      - name: Parse original production module with native Node
+        run: npm run check
+      - name: Run byte evidence, provenance and admission refusal tests
+        run: npm test
