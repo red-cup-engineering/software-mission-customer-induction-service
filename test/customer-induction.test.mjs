@@ -25,7 +25,7 @@ const identity = ({ objectKind, value, witnessRoot }) => ({
 });
 const createSoftwareMissionCustomerInduction = new Function("createHash", "Buffer",
   "EMPTY_WITNESS_ROOT", "identifyJsonSemanticContent",
-  '"use strict";\\n' + isolatedSource + "\\nreturn createSoftwareMissionCustomerInduction;")
+  '"use strict";\n' + isolatedSource + "\nreturn createSoftwareMissionCustomerInduction;")
   (createHash, Buffer, "fixture:identity-provider-isolated", identity);
 const { induceVerifiedMissionProposal } = createSoftwareMissionCustomerInduction();
 const sha256 = bytes => "sha256:" + createHash("sha256").update(bytes).digest("hex");
