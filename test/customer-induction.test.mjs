@@ -1,8 +1,32 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import test from "node:test";
-import { createSoftwareMissionCustomerInduction } from "../src/customer-induction.mjs";
 
+// The historical RMN-v2 content identity dependency is workspace-owned and
+// intentionally not reimplemented by this standalone source qualification.
+// Run the EXACT production module body in native Node with only that foreign
+// identity port replaced. No filesystem/application effects can be reached.
+// This qualifies byte custody and path law, NOT the installed identity service.
+const originalSource = readFileSync(new URL("../src/customer-induction.mjs", import.meta.url), "utf8");
+const externalCrypto = 'import { createHash } from "node:crypto";';
+const externalIdentity = 'import { EMPTY_WITNESS_ROOT, identifyJsonSemanticContent } from "@red-cup-engineering/semantic-content-identify-service";';
+const entrypoint = "export function createSoftwareMissionCustomerInduction()";
+assert.equal(originalSource.split(externalCrypto).length, 2, "same native SHA-256 implementation");
+assert.equal(originalSource.split(externalIdentity).length, 2, "historical identity dependency is the only mocked source");
+assert.equal(originalSource.split(entrypoint).length, 2, "the original callable producer is unchanged");
+const isolatedSource = originalSource.replace(externalCrypto, "")
+  .replace(externalIdentity, "").replace(entrypoint,
+    "function createSoftwareMissionCustomerInduction()");
+const identity = ({ objectKind, value, witnessRoot }) => ({
+  id: "ni:///sha-256;" + createHash("sha256")
+    .update(JSON.stringify({ objectKind, value, witnessRoot }))
+    .digest("base64url"),
+});
+const createSoftwareMissionCustomerInduction = new Function("createHash", "Buffer",
+  "EMPTY_WITNESS_ROOT", "identifyJsonSemanticContent",
+  '"use strict";\\n' + isolatedSource + "\\nreturn createSoftwareMissionCustomerInduction;")
+  (createHash, Buffer, "fixture:identity-provider-isolated", identity);
 const { induceVerifiedMissionProposal } = createSoftwareMissionCustomerInduction();
 const sha256 = bytes => "sha256:" + createHash("sha256").update(bytes).digest("hex");
 const textBytes = value => Buffer.from(value, "utf8");
