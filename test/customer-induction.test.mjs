@@ -175,6 +175,22 @@ test("the content-addressed proposal is a detached, deeply frozen original byte-
   assert.throws(() => { manifest.proposal.changes[0].path = "outside.mjs"; }, TypeError);
 });
 
+test("customer territory and other nested metadata cannot change after manifest identity is selected", () => {
+  const territory = { source: { repository: "customer/real-repository", commit: "a".repeat(40) } };
+  const missionWithTerritory = { ...mission, territory };
+  const manifest = induceVerifiedMissionProposal(missionWithTerritory, result([change()]));
+  assert.equal(manifest.territory.source.repository, "customer/real-repository");
+  const address = manifest.id;
+  territory.source.repository = "attacker/other";
+  territory.source.commit = "b".repeat(40);
+  assert.equal(manifest.territory.source.repository, "customer/real-repository");
+  assert.equal(manifest.territory.source.commit, "a".repeat(40));
+  assert.equal(manifest.id, address);
+  assert.ok(Object.isFrozen(manifest.territory));
+  assert.ok(Object.isFrozen(manifest.territory.source));
+  assert.throws(() => { manifest.territory.source.repository = "attacker/other"; }, TypeError);
+});
+
 test("aggregate proposal bytes remain bounded without introducing any host or customer effect", () => {
   const big = "A".repeat(4 * Math.ceil((16 * 1024 * 1024) / 3) + 4);
   assert.throws(() => induceVerifiedMissionProposal(mission,
