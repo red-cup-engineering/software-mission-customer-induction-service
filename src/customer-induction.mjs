@@ -10,7 +10,20 @@ import { EMPTY_WITNESS_ROOT, identifyJsonSemanticContent } from "@red-cup-engine
 
 export function createSoftwareMissionCustomerInduction() {
   const rmnId = (value) => identifyJsonSemanticContent({ objectKind: "software-mission-customer-induction.manifest", value, witnessRoot: EMPTY_WITNESS_ROOT }).id;
-  const record = (body) => Object.freeze({ id: rmnId(body), ...body });
+  // The entire manifest, including source territory and future nested metadata,
+  // has ONE detached JSON snapshot before addressing. A caller cannot mutate
+  // an indirect field after identity selection and counterfeit the same ID.
+  const freeze = value => {
+    if (value && typeof value === "object") {
+      for (const child of Object.values(value)) freeze(child);
+      Object.freeze(value);
+    }
+    return value;
+  };
+  const record = (body) => {
+    const snapshot = freeze(JSON.parse(JSON.stringify(body)));
+    return Object.freeze({ id: rmnId(snapshot), ...snapshot });
+  };
 
   const SHA256 = /^sha256:[0-9a-f]{64}$/u;
   const MAX_CHANGES = 128;
@@ -88,20 +101,9 @@ export function createSoftwareMissionCustomerInduction() {
       if (change.beforeExisted && change.beforeDigest === change.afterDigest)
         throw new Error("proposal claims a change with identical source and result: " + change.path);
     }
-    // Decouple original mutable supplier values from the content-addressed
-    // output. Otherwise a caller could change proposal.changes[0] AFTER the
-    // manifest id was computed and obtain a different payload under the same
-    // reported identifier. Induction is still inert: JS Mark independently
-    // verifies the original source before accepting any change.
-    const snapshot = JSON.parse(JSON.stringify(proposal));
-    const freeze = value => {
-      if (value && typeof value === "object") {
-        for (const child of Object.values(value)) freeze(child);
-        Object.freeze(value);
-      }
-      return value;
-    };
-    return freeze(snapshot);
+    // The single record boundary snapshots every nested source field before
+    // assigning its content ID. JS Mark still verifies the true preimage.
+    return proposal;
   }
 
 /** Produce the sole input to host admission.  This does not inspect or mutate
