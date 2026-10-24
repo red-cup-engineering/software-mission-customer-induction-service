@@ -70,7 +70,8 @@ export function createSoftwareMissionCustomerInduction() {
           change.path.startsWith(lane + "/"))) {
         throw new Error("proposal path is outside the customer writable lane: " + change.path);
       }
-      if (typeof change.beforeExisted !== "boolean" ||
+      if ((change.kind !== undefined && change.kind !== "file") ||
+          typeof change.beforeExisted !== "boolean" ||
           !SHA256.test(change.beforeDigest ?? "") ||
           !SHA256.test(change.afterDigest ?? "") ||
           typeof change.afterBytesBase64 !== "string") {
@@ -87,17 +88,27 @@ export function createSoftwareMissionCustomerInduction() {
       if (change.beforeExisted && change.beforeDigest === change.afterDigest)
         throw new Error("proposal claims a change with identical source and result: " + change.path);
     }
-    // Deliberately no mutation, account grant or reported customer acceptance.
-    // The receiving JS Mark must still independently inspect source preimages,
-    // customer writable rights and actual verification before any Work effect.
-    return proposal;
+    // Decouple original mutable supplier values from the content-addressed
+    // output. Otherwise a caller could change proposal.changes[0] AFTER the
+    // manifest id was computed and obtain a different payload under the same
+    // reported identifier. Induction is still inert: JS Mark independently
+    // verifies the original source before accepting any change.
+    const snapshot = JSON.parse(JSON.stringify(proposal));
+    const freeze = value => {
+      if (value && typeof value === "object") {
+        for (const child of Object.values(value)) freeze(child);
+        Object.freeze(value);
+      }
+      return value;
+    };
+    return freeze(snapshot);
   }
 
 /** Produce the sole input to host admission.  This does not inspect or mutate
  * `territory`; that reference is opaque until the JS Mark resolves it. */
   function induceVerifiedMissionProposal(mission, result) {
     const proposal = verifiedProposal(mission, result); if (proposal === null) return null;
-    return record({ type: "SoftwareMissionCustomerInductionManifest", providerProposal: result.semanticId ?? null, mission: mission.id ?? null, territory: mission.territory, writablePaths: [...mission.writablePaths], verifyCommand: mission.verifyCommand, acceptanceCommand: mission.acceptanceCommand ?? mission.verifyCommand, proposal, disposition: "proposal-awaiting-js-mark-admission", customerMutation: false });
+    return record({ type: "SoftwareMissionCustomerInductionManifest", providerProposal: result.semanticId ?? null, mission: mission.id ?? null, territory: mission.territory, writablePaths: Object.freeze([...mission.writablePaths]), verifyCommand: mission.verifyCommand, acceptanceCommand: mission.acceptanceCommand ?? mission.verifyCommand, proposal, disposition: "proposal-awaiting-js-mark-admission", customerMutation: false });
   }
 
   return Object.freeze({ induceVerifiedMissionProposal });
