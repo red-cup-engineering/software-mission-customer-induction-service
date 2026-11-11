@@ -15,7 +15,7 @@
     "verify": "npm run check && npm test"
   },
   "dependencies": {
-    "@red-cup-engineering/semantic-content-identify-service": "workspace:*"
+    "@red-cup-engineering/semantic-content-identify-service": "^0.2.19"
   },
   "engines": {
     "node": ">=22"
